@@ -1,0 +1,36 @@
+*{margin: 0; padding: 0;}
+    body{
+        font-family: monospace;
+        font-size: 16px;
+    }
+    #content {
+        text-align: center;
+        width: 600px;
+        margin: 0 auto;
+    }
+
+    #board {
+          width: 306px;
+          height: 306px;
+          border: 1px solid;
+          margin: 0 auto;
+    }
+    .cell {
+        border: 1px solid;
+      height: 100px;
+      width: 100px;
+      float: left;
+        cursor: pointer;
+    }
+    .cell:hover {
+        background-color: #d9d9d9;
+    }
+    .cell h1 {
+          font-size: 82px;
+    }
+    #buttons {
+        padding:50px 0;
+    }
+    #board {
+        display: none;
+    }

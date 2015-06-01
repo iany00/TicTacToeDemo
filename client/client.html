@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic Tac Toe Demo using websockets</title>
+    <link rel="stylesheet" type="text/css" href="style.css"/>
+</head>
+<body>
+    
+<div id="content"> 
+
+    <div id="buttons">
+        <input type="text" id="username" value="Guest" name="username"/>
+        <button id="connect">Connect</button>
+        <button id="close" disabled>Disconnect</button>
+    </div>
+    <div id="board">
+        <div class="cell" data-col="0" data-row="0"></div>
+        <div class="cell" data-col="1" data-row="0"></div>
+        <div class="cell" data-col="2" data-row="0"></div>
+        <div class="break"></div>
+
+        <div class="cell" data-col="0" data-row="1"></div>
+        <div class="cell" data-col="1" data-row="1"></div>
+        <div class="cell" data-col="2" data-row="1"></div>
+        <div class="break"></div>
+
+        <div class="cell" data-col="0" data-row="2"></div>
+        <div class="cell" data-col="1" data-row="2"></div>
+        <div class="cell" data-col="2" data-row="2"></div>
+        <div class="break"></div>
+        <br />
+        <br />
+        <button id="clear">New Game</button>
+    </div>
+
+    <div id="screen"> </div>
+
+    
+</div>
+
+<script src="jquery-1.11.0.js"></script>
+<script src="client.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('.cell').not('checked').click(function() {
+                var arrMesg = $(this).data();
+                console.log(arrMesg);
+                sendMessage(arrMesg);
+            });
+            
+            $('#connect').off();
+            $('#connect').click(function(){
+                connect();
+            });
+            $('#close').click(function(){
+                closeConn();
+            });
+            $('#clear').click(function(){
+                clearBoard(true);
+            });
+        });
+    </script>
+
+</body>
+</html>
