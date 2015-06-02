@@ -18,7 +18,7 @@
             'username' : username,
             'message' : message
         }
-        console.log(obj);
+        
         return JSON.stringify(obj);
     }
     
@@ -41,6 +41,7 @@
             $('#connect').prop('disabled', false);
             $('#username').prop('disabled', false);
            
+            closeGame();
             showInfo('Socket closed!', true);
         }
         socket.onmessage = function(e){
@@ -54,8 +55,11 @@
                     startGame();
                     break;
                 case 'newGame':
+                     showInfo('New game has started!', true);
                      clearBoard(false);
                 break;
+                case 'endGame':
+                    endGame(e.data);
                 default:
                     drawAction(e.data);
             }
@@ -97,15 +101,27 @@
 
     function startGame ()
     {
+        clearBoard(false);
+        clearInfo();
         showInfo('You play with ' + mark, true);
+        showInfo('Player with `X` starts first!', true);
         visibleBoard(true);
     }
 
     function closeGame ()
     {
-        clearBoard(true);
+        clearBoard(false);
         visibleBoard(false);
         clearInfo();
+        $('#overlay').hide();
+        $('#endGameMsg').hide();
+    }
+
+    function endGame(data)
+    {
+        data = parseMessage(data);
+        $('#overlay').show();
+        $('#endGameMsg').empty().append(data['message']).show();
     }
 
 
@@ -131,8 +147,6 @@
     /***/
     function drawAction(msg)
     {
-        console.log(msg);
-        
         var parsedMsg = parseMessage(msg);
         if(typeof  parsedMsg['mark'] !== "undefined") {
             mark = parsedMsg['mark'];    
@@ -144,9 +158,11 @@
 
     /***/
     function clearBoard(call){
-        $('#board').find('.cell').empty();
-        showInfo('New game has started!', true);
-        if(call) {
+        $('#board').find('.cell').removeClass('marked').empty();
+        $('#overlay').hide();
+        $('#endGameMsg').hide();
+
+        if(call === true) {
             var action = {'action': 'newGame'};
             sendMessage(action);
         }
@@ -166,6 +182,7 @@
     function checkCell(data) {
         if(data == '') return false;
         $('[data-col="'+data['col']+'"][data-row="'+data['row']+'"]')
+                .addClass('marked')
                 .empty()
                 .append('<h1>'+mark+'</h1>');
     }

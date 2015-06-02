@@ -1,22 +1,25 @@
 <?php
 /**
- * Tic Tak Toe - SERVER CODE
+ * Tic Tac Toe - SERVER CODE
  * -----------------------------------------
  * @Author : Ionut Airinei <ionut.n.airinei@gmail.com>
  */
 
 require "PHP-Websockets/websockets.php";
 require "Message.php";
+require "TicTT.php";
 
 class Server extends WebSocketServer
 {
     private $_serverMessage;
     private $_startGame;
+    private $_TicTacToe;
 
     public function __construct($addr, $port)
     {
         parent::__construct($addr, $port);
         $this->_serverMessage = new Message();
+        $this->_TicTacToe = new TicTT();
         $this->_serverMessage->action = 'init';
         $this->_startGame     = false;
     }
@@ -28,6 +31,7 @@ class Server extends WebSocketServer
        
         // Only 2 users can play
         if($countUsers > 2) {
+            // TODO: send message: Board is full;
             $this->closed($user);
             return false;
         }
@@ -53,6 +57,8 @@ class Server extends WebSocketServer
             $this->_serverMessage->startGame = $this->_startGame;
             $this->_serverMessage->action = 'startGame';
             $this->sendAll($this->_serverMessage);
+
+            $this->_TicTacToe->newGame();
         }
     }
 
@@ -67,14 +73,40 @@ class Server extends WebSocketServer
            $this->send($user, $message->serialize());
         } else {
             $message = (new Message())->unserialize($message, $user->mark);
-            $this->sendAll($message);
-        }   
+
+  
+            if(isset($message->message['action']) && $message->message['action'] == 'newGame') {
+                $this->_TicTacToe->newGame();
+                $message->action = 'startGame';
+                $this->sendAll($message);
+                return;
+            }
+
+            $gameEnd = $this->_TicTacToe->move($message);
+            if($gameEnd == -1) {
+                return; // Not his turn
+            }
+            
+            if($gameEnd) {
+                $this->sendAll($message); // Send last move
+                // Send end game winner
+                $newMessage = new Message();
+                $newMessage->message = $gameEnd;
+                $newMessage->action = 'endGame';
+                $this->sendAll($newMessage);
+            } else {
+                $this->sendAll($message);
+            }
+        }
     }
 
     // @override
     protected function closed($user)
     {
         if(count($this->users) < 2) {
+           $this->_serverMessage->message = "Searching for players...";
+           $this->_serverMessage->action = 'init';
+           $this->sendAll($this->_serverMessage);
            $this->_startGame = false;
         }
 
