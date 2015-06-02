@@ -1,5 +1,5 @@
 # TicTacToeDemo
 
-Tic Tac Toe Demo
+Tic Tac Toe Demo using #PHP WebSockets
 
 Version: Alpha
