@@ -46,20 +46,20 @@
 <script src="client.js"></script>
     <script>
         $(document).ready(function(){
-            $('.cell').not('checked').click(function() {
+			$('.cell').not('checked').click(function() {
                 var arrMesg = $(this).data();
-                sendMessage(arrMesg);
+                Client.Action.sendMessage(arrMesg);
             });
             
             $('#connect').off();
             $('#connect').click(function(){
-                connect();
+                Client.Connect();
             });
             $('#close').click(function(){
-                closeConn();
+                Client.Action.closeConn();
             });
             $('#clear').click(function(){
-                clearBoard(true);
+                Client.Game.clearBoard(true);
             });
         });
     </script>

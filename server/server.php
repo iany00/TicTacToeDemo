@@ -3,6 +3,7 @@
  * Tic Tac Toe - SERVER CODE
  * -----------------------------------------
  * @Author : Ionut Airinei <ionut.n.airinei@gmail.com>
+ * Copyright (c) 2015 Ionut Airinei
  */
 
 require "PHP-Websockets/websockets.php";
@@ -32,17 +33,18 @@ class Server extends WebSocketServer
         // Only 2 users can play
         if($countUsers > 2) {
             // TODO: send message: Board is full;
+			// TODO: create server side user socket disconnect
             $this->closed($user);
             return false;
         }
         
         $mark = 'X';
         if($countUsers == 2) {
-            $this->_startGame = true;
-            $mark = 'O';
+			// TODO: fix bug: mark set wrong when user is disconnected
+			$this->_startGame = true;
+			$mark = 'O';
         }
       
-
         $user->mark = $mark;
 
         $this->_serverMessage->mark = $mark;
@@ -66,6 +68,7 @@ class Server extends WebSocketServer
     protected function process($user, $message)
     {
         // Send back message to everyone
+		// TODO: find a new way to send actions to client side
         if( !$this->_startGame) {
            $message = new Message();
            $message->action  = 'init';
@@ -73,7 +76,6 @@ class Server extends WebSocketServer
            $this->send($user, $message->serialize());
         } else {
             $message = (new Message())->unserialize($message, $user->mark);
-
   
             if(isset($message->message['action']) && $message->message['action'] == 'newGame') {
                 $this->_TicTacToe->newGame();

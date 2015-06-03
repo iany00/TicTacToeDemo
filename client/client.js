@@ -1,188 +1,231 @@
-  // Client here
-    var socket   = null;
-    var uri      = "ws://localhost:2000";
-    var username = $.now();
-    var mark     = 'X';
+/**
+ * Tic Tac Toe - SERVER CODE
+ * -----------------------------------------
+ * Author : Ionut Airinei <ionut.n.airinei@gmail.com>
+ * Copyright (c) 2015 Ionut Airinei
+ */
+function parseMessage(data){
+    var jsonObj = JSON.parse(data);
+    return jsonObj;
+}
 
 
-    /***/
-    function parseMessage(data){
-        var jsonObj = JSON.parse(data);
-        return jsonObj;
-    }
+/***/
+function serializeMessage(message){
+    var obj = {
+        'username' : Client.username,
+        'message' : message
+    };
+
+    return JSON.stringify(obj);
+}
 
 
-    /***/
-    function serializeMessage(message){
-        var obj = {
-            'username' : username,
-            'message' : message
-        }
-        
-        return JSON.stringify(obj);
-    }
-    
+var Client = {
+    socket   : null,
+    uri      : "ws://localhost:2000",
+    mark     : 'X',
+    $close   : $('#close'),
+    $connect : $('#connect'),
+    $username: $('#username'),
+    $board   : $('#board'),
+    $overlay : $('#overlay'),
+    $endGameMsg : $('#endGameMsg'),
+    $screen  : $('#screen'),
+    username : $('#username').val() || $.now()
+};
 
-    /***/
-    function connect()
+Client.Connect = function() {
+    var _self = Client;
+
+    // Enable send and close button
+    _self.$close.prop('disabled', false);
+    _self.$connect.prop('disabled', true);
+    _self.$username.prop('disabled', true);
+
+    _self.socket = new WebSocket(_self.uri);
+
+
+    if (!_self.socket || _self.socket == undefined)
     {
-        socket = new WebSocket(uri);
-        if(!socket || socket == undefined) return false;
-        socket.onopen = function(){
-            $(window).bind('beforeunload',function(){
-                closeConn();
-            });
-        }
-        socket.onerror = function(){
-            showInfo('Error!!!', true);
-        }
-        socket.onclose = function(){
-            $('#close').prop('disabled', true);
-            $('#connect').prop('disabled', false);
-            $('#username').prop('disabled', false);
-           
-            closeGame();
-            showInfo('Socket closed!', true);
-        }
-        socket.onmessage = function(e){
-            var msg = parseMessage(e.data);
-            switch(msg['action']) {
-                case 'init':
-                    initGame(e.data);
-                    showInfo(e.data, false);
-                break;
-                case 'startGame':
-                    startGame();
-                    break;
-                case 'newGame':
-                     showInfo('New game has started!', true);
-                     clearBoard(false);
-                break;
-                case 'endGame':
-                    endGame(e.data);
-                default:
-                    drawAction(e.data);
-            }
-        }
-        // Init user data
-        username = $('#username').val();
-        
-        // Enable send and close button
-        $('#close').prop('disabled', false);
-        $('#connect').prop('disabled', true);
-        $('#username').prop('disabled', true);            
+        return;
     }
 
-    /***/
-    function closeConn(){
+    _self.socket.onopen = function ()
+    {
+        $(window).bind('beforeunload', function ()
+        {
+            _self.Action.closeConn();
+        });
+    };
+    _self.socket.onerror = function ()
+    {
+        showInfo('Error!!!', true);
+    };
+    _self.socket.onclose = function ()
+    {
+        _self.Game.closeGame();
+        showInfo('Socket closed!', true);
+    };
+    _self.socket.onmessage = function (e)
+    {
+        _self.Game._do(e.data);
+    };
+};
+
+Client.Action = {
+    closeConn : function() {
         console.log('Connection Closed');
-        closeGame();
-        socket.close();
-    }
+        Client.socket.close();
+    },
 
-
-     /***/
-    function sendMessage(mess)
+    sendMessage : function(mess)
     {
-        if(!socket || socket == undefined) return false;
-        if(mess == '') return;
-        socket.send(serializeMessage(mess));            
+        if (!Client.socket || Client.socket == undefined)
+        {
+            return false;
+        }
+        if (mess == '')
+        {
+            return;
+        }
+        Client.socket.send(serializeMessage(mess));
     }
+};
 
 
-    function initGame(data) 
+Client.Game = {
+   _do : function (data) {
+        var _self = this;
+        var msg = parseMessage(data);
+        switch (msg['action'])
+        {
+            case 'init':
+                _self.initGame(data);
+                _self.showInfo(data, false);
+                break;
+
+            case 'startGame':
+                _self.startGame();
+                break;
+
+            case 'newGame':
+                _self.showInfo('New game has started!', true);
+                _self.clearBoard(false);
+                break;
+
+            case 'endGame':
+                _self.endGame(data);
+            break;
+
+            default:
+                _self.move(data);
+        }
+    },
+
+    initGame : function(data)
     {
-        closeGame();
+        this.clearBoard(false);
+        this.clearInfo();
+        this.visibleBoard(false);
         var parsedMsg = parseMessage(data);
-        if(typeof  parsedMsg['mark'] !== "undefined") {
-            mark = parsedMsg['mark'];    
+        if(typeof  parsedMsg['mark'] !== "undefined")
+        {
+            Client.mark = parsedMsg['mark'];
         }
-    }
+    },
 
-    function startGame ()
+    startGame : function()
     {
-        clearBoard(false);
-        clearInfo();
-        showInfo('You play with ' + mark, true);
-        showInfo('Player with `X` starts first!', true);
-        visibleBoard(true);
-    }
+        this.clearBoard(false);
+        this.clearInfo();
+        this.visibleBoard(true);
 
-    function closeGame ()
-    {
-        clearBoard(false);
-        visibleBoard(false);
-        clearInfo();
-        $('#overlay').hide();
-        $('#endGameMsg').hide();
-    }
+        this.showInfo('You play with ' + Client.mark, true);
+        this.showInfo('Player with `X` starts first!', true);
+    },
 
-    function endGame(data)
-    {
-        data = parseMessage(data);
-        $('#overlay').show();
-        $('#endGameMsg').empty().append(data['message']).show();
-    }
-
-
-    /**/
-    function showInfo(msg, text) {
-        var screen = $('#screen');
-        screen.append('</br>');
-        
-        if(text) {
-            screen.append(msg);
-        } else {
-            msg = parseMessage(msg);
-            screen.append(msg['message']);    
-        }
-    }
-
-    /**/
-     function clearInfo()
-     {
-        $('#screen').empty();
-     }
-
-    /***/
-    function drawAction(msg)
+    move : function  (msg)
     {
         var parsedMsg = parseMessage(msg);
-        if(typeof  parsedMsg['mark'] !== "undefined") {
-            mark = parsedMsg['mark'];    
+        if(typeof  parsedMsg['mark'] !== "undefined")
+        {
+            Client.mark = parsedMsg['mark'];
         }
-        
-        checkCell(parsedMsg['message']);
-    }
 
+        this.markMove(parsedMsg['message']);
+    },
 
-    /***/
-    function clearBoard(call){
-        $('#board').find('.cell').removeClass('marked').empty();
-        $('#overlay').hide();
-        $('#endGameMsg').hide();
+    markMove: function (data)
+    {
+        if (data == '')
+        {
+            return false;
+        }
+        $('[data-col="' + data['col'] + '"][data-row="' + data['row'] + '"]')
+            .addClass('marked')
+            .empty()
+            .append('<h1>' + Client.mark + '</h1>');
+    },
+
+    clearBoard : function(call) {
+        Client.$board.find('.cell').removeClass('marked').empty();
+        Client.$overlay.hide();
+        Client.$endGameMsg.hide();
 
         if(call === true) {
             var action = {'action': 'newGame'};
-            sendMessage(action);
+            Client.Action.sendMessage(action);
         }
-    }
+    },
 
-    /**/
-    function visibleBoard(visible) {
-        clearBoard(false);
+
+    visibleBoard : function(visible) {
+        this.clearBoard(false);
         if(visible) {
-             $('#board').show();
+            Client.$board.show();
         } else {
-            $('#board').hide();
+            Client.$board.hide();
         }
+    },
+
+    closeGame : function()
+    {
+        Client.$close.prop('disabled', true);
+        Client.$connect.prop('disabled', false);
+        Client.$username.prop('disabled', false);
+
+        this.clearBoard(false);
+        this.visibleBoard(false);
+        this.clearInfo();
+
+        Client.$overlay.hide();
+        Client.$endGameMsg.hide();
+    },
+
+    endGame : function(data)
+    {
+        data = parseMessage(data);
+        Client.$overlay.show();
+        Client.$endGameMsg.empty().append(data['message']).show();
+    },
+
+    showInfo : function (msg, text) {
+        Client.$screen.append('</br>');
+
+        if(text) {
+            Client.$screen.append(msg);
+        } else {
+            msg = parseMessage(msg);
+            Client.$screen.append(msg['message']);
+        }
+    },
+
+    clearInfo : function ()
+    {
+        Client.$screen.empty();
     }
 
-    /**/
-    function checkCell(data) {
-        if(data == '') return false;
-        $('[data-col="'+data['col']+'"][data-row="'+data['row']+'"]')
-                .addClass('marked')
-                .empty()
-                .append('<h1>'+mark+'</h1>');
-    }
+};
+
+
