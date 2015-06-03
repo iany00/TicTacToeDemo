@@ -1,5 +1,5 @@
 /**
- * Tic Tac Toe - SERVER CODE
+ * Tic Tac Toe - Client CODE
  * -----------------------------------------
  * Author : Ionut Airinei <ionut.n.airinei@gmail.com>
  * Copyright (c) 2015 Ionut Airinei
